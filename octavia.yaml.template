@@ -1,0 +1,72 @@
+apiVersion: v1
+kind: Pod
+metadata:
+  name: octavia
+spec:
+  hostNetwork: true
+  volumes:
+  - name: octavia-etc
+    hostPath:
+      path: /etc/octavia
+  - name: octavia-conf
+    hostPath:
+      path: ${PROJECT_DIR}/etc/octavia.conf
+  - name: octavia-src
+    hostPath:
+      path: ${PROJECT_DIR}/octavia
+  - name: ovn-octavia-src
+    hostPath:
+      path: ${PROJECT_DIR}/ovn-octavia-provider
+  - name: octavia-run
+    hostPath:
+      path: /var/run/octavia
+  - name: uwsgi-run
+    hostPath:
+      path: /var/run/uwsgi
+  - name: octavia-uwsgi-ini
+    hostPath:
+      path: ${PROJECT_DIR}/etc/octavia-uwsgi.ini
+  containers:
+  - name: api
+    image: octavia:wallaby
+    command: [uwsgi, --ini, /etc/octavia/octavia-uwsgi.ini]
+    volumeMounts:
+    - {name: octavia-etc, mountPath: /etc/octavia}
+    - {name: octavia-conf, mountPath: /etc/octavia/octavia.conf}
+    - {name: octavia-src, mountPath: /src/octavia}
+    - {name: ovn-octavia-src, mountPath: /src/ovn-octavia-provider}
+    - {name: octavia-run, mountPath: /var/run/octavia}
+    - {name: uwsgi-run, mountPath: /var/run/uwsgi}
+    - {name: octavia-uwsgi-ini, mountPath: /etc/octavia/octavia-uwsgi.ini}
+  - name: worker
+    image: octavia:wallaby
+    command: [octavia-worker, --config-file, /etc/octavia/octavia.conf]
+    volumeMounts:
+    - {name: octavia-etc, mountPath: /etc/octavia}
+    - {name: octavia-conf, mountPath: /etc/octavia/octavia.conf}
+    - {name: octavia-src, mountPath: /src/octavia}
+    - {name: ovn-octavia-src, mountPath: /src/ovn-octavia-provider}
+  - name: health-manager
+    image: octavia:wallaby
+    command: [octavia-health-manager, --config-file, /etc/octavia/octavia.conf]
+    volumeMounts:
+    - {name: octavia-etc, mountPath: /etc/octavia}
+    - {name: octavia-conf, mountPath: /etc/octavia/octavia.conf}
+    - {name: octavia-src, mountPath: /src/octavia}
+    - {name: ovn-octavia-src, mountPath: /src/ovn-octavia-provider}
+  - name: housekeeping
+    image: octavia:wallaby
+    command: [octavia-housekeeping, --config-file, /etc/octavia/octavia.conf]
+    volumeMounts:
+    - {name: octavia-etc, mountPath: /etc/octavia}
+    - {name: octavia-conf, mountPath: /etc/octavia/octavia.conf}
+    - {name: octavia-src, mountPath: /src/octavia}
+    - {name: ovn-octavia-src, mountPath: /src/ovn-octavia-provider}
+  - name: driver-agent
+    image: octavia:wallaby
+    command: [octavia-driver-agent, --config-file, /etc/octavia/octavia.conf]
+    volumeMounts:
+    - {name: octavia-etc, mountPath: /etc/octavia}
+    - {name: octavia-conf, mountPath: /etc/octavia/octavia.conf}
+    - {name: octavia-src, mountPath: /src/octavia}
+    - {name: ovn-octavia-src, mountPath: /src/ovn-octavia-provider}
